@@ -7,6 +7,7 @@ from app.schemas.text_schema import (
     SummaryResponse,
 )
 from app.services import text_service
+from app.services import summarization_service
 
 router = APIRouter(prefix="/text", tags=["text"])
 
@@ -25,5 +26,6 @@ def sentiment(request: TextRequest) -> SentimentResponse:
 
 @router.post("/summary", response_model=SummaryResponse)
 def summary(request: TextRequest) -> SummaryResponse:
-    result = text_service.summarize_text(request.text)
+    result = summarization_service.summarize(request.text)
     return SummaryResponse(summary=result)
+
