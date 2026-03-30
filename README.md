@@ -12,14 +12,15 @@ Três funcionalidades principais expostas via HTTP:
 
 ## Tecnologias
 
-| Biblioteca             | Papel no projeto                                                                       |
-| ---------------------- | -------------------------------------------------------------------------------------- |
-| **FastAPI**            | Framework HTTP — define rotas, valida dados, gera docs automáticas                     |
-| **Pydantic**           | Validação de entrada e saída — garante que o JSON recebido/enviado tem o formato certo |
-| **spaCy**              | Processamento de linguagem natural — tokenização, análise morfológica (POS tagging)    |
-| **Uvicorn**            | Servidor ASGI — executa a aplicação FastAPI                                            |
-| **Pytest**             | Framework de testes                                                                    |
-| **HTTPX / TestClient** | Cliente HTTP usado nos testes de integração                                            |
+| Biblioteca                | Papel no projeto                                                                       |
+| ------------------------- | -------------------------------------------------------------------------------------- |
+| **FastAPI**               | Framework HTTP — define rotas, valida dados, gera docs automáticas                     |
+| **Pydantic**              | Validação de entrada e saída — garante que o JSON recebido/enviado tem o formato certo |
+| **spaCy**                 | Processamento de linguagem natural — tokenização, análise morfológica (POS tagging)    |
+| **PyTorch / HuggingFace** | Deep Learning e modelos de IA (Transformers) — sumarização abstractiva via Seq2Seq     |
+| **Uvicorn**               | Servidor ASGI — executa a aplicação FastAPI                                            |
+| **Pytest**                | Framework de testes                                                                    |
+| **HTTPX / TestClient**    | Cliente HTTP usado nos testes de integração                                            |
 
 ---
 
@@ -34,7 +35,8 @@ ai-text-analysis-api/
 │   ├── schemas/
 │   │   └── text_schema.py       # Modelos de request e response (Pydantic)
 │   └── services/
-│       └── text_service.py      # Lógica de NLP (keywords, sentiment, summary)
+│       ├── text_service.py          # Lógica de NLP clássico (keywords, sentiment)
+│       └── summarization_service.py # Lógica de geração de resumos com IA (PyTorch)
 ├── tests/
 │   ├── test_health.py           # Testes do endpoint de saúde
 │   └── test_text_routes.py      # Testes dos endpoints de texto
@@ -53,33 +55,16 @@ Cada pasta tem uma responsabilidade clara:
 
 ## Como Instalar e Rodar
 
-**1. Criar e ativar o ambiente virtual:**
+O modo recomendado e mais fácil de rodar este projeto é utilizando o **Docker**. Ele vai lidar automaticamente com as dependências complexas (como o PyTorch) e vai fazer o download prévio dos modelos de inteligência artificial durante a fase de build.
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate   # Linux / Mac
-```
-
-**2. Instalar dependências:**
-
-```bash
-pip install -r requirements.txt
-```
-
-**3. Baixar modelo de linguagem do spaCy:**
-
-```bash
-python -m spacy download en_core_web_sm
-```
-
-**4. Rodar a API:**
-
-```bash
-uvicorn app.main:app --reload
+docker compose up --build
 ```
 
 A API estará disponível em `http://localhost:8000`.
-Documentação automática disponível em `http://localhost:8000/docs`.
+Documentação automática e interativa do FastAPI disponível em `http://localhost:8000/docs`.
+
+_(Se você preferir rodar localmente sem o Docker, é necessário criar um `venv`, instalar as dependências do `requirements.txt` e `requirements.prod.txt`, baixar os modelos do spaCy via comando e rodar o `uvicorn` manualmente)._
 
 ---
 
@@ -180,13 +165,12 @@ Gera um resumo do texto mantendo as frases mais relevantes.
 
 **Como funciona:**
 
-Usa um algoritmo de sumarização extrativa baseado em frequência de palavras:
+A API utiliza **sumarização abstractiva**, que emprega modelos de Deep Learning da arquitetura _Seq2Seq_ (Transformers via biblioteca da Hugging Face e PyTorch).
 
-1. Conta a frequência de cada palavra significativa no texto completo.
-2. Pontua cada frase pela média das frequências das suas palavras.
-3. Seleciona as 3 frases com maior pontuação e as retorna na ordem original.
+Diferente do método _"extrativo"_ (que apenas seleciona frases inteiras baseando-se em suas pontuações e frequências), este método abstractivo permite que a inteligência artificial leia o texto, **compreenda o seu significado** e gere um texto completamente novo, com as próprias palavras do modelo.
 
-Textos com 3 frases ou menos são retornados sem modificação.
+- **Modelos Intercambiáveis**: Suportado por meio da variável de ambiente `SUMMARIZATION_MODEL` no `docker-compose.yml`. O padrão do projeto é o `distilbart` (mais rápido e leve), mas tem suporte programado também para o `flan-t5` do Google.
+- A configuração da geração é feita explicitamente interatuando com os tensores do PyTorch (sem abstração por cima), usando técnicas como tokenização por ID, formatação de máscaras de atenção e _beam search_ pra explorar as respostas mais coerentes.
 
 ---
 
@@ -249,10 +233,10 @@ Cliente HTTP (curl, /docs, frontend)
 
 ## Conceitos de NLP Usados
 
-| Conceito                  | O que é                                                                  | Onde é usado                         |
-| ------------------------- | ------------------------------------------------------------------------ | ------------------------------------ |
-| **Tokenização**           | Dividir o texto em unidades (palavras, pontuação)                        | Em todos os endpoints                |
-| **POS Tagging**           | Identificar a classe gramatical de cada token (substantivo, verbo, etc.) | `extract_keywords`                   |
-| **Stopwords**             | Palavras sem carga semântica ("the", "is", "a") que são removidas        | `extract_keywords`, `summarize_text` |
-| **Lematização**           | Reduzir palavras à forma base ("running" → "run")                        | `extract_keywords`                   |
-| **Sumarização extrativa** | Selecionar frases existentes do texto original (vs. gerar novas frases)  | `summarize_text`                     |
+| Conceito                   | O que é                                                                      | Onde é usado                         |
+| -------------------------- | ---------------------------------------------------------------------------- | ------------------------------------ |
+| **Tokenização**            | Dividir o texto em unidades (palavras, pontuação)                            | Em todos os endpoints                |
+| **POS Tagging**            | Identificar a classe gramatical de cada token (substantivo, verbo, etc.)     | `extract_keywords`                   |
+| **Stopwords**              | Palavras sem carga semântica ("the", "is", "a") que são removidas            | `extract_keywords`, `summarize_text` |
+| **Lematização**            | Reduzir palavras à forma base ("running" → "run")                            | `extract_keywords`                   |
+| **Sumarização abstrativa** | Usar modelos Seq2Seq de Deep Learning para compreender e gerar novos resumos | `summarization_service`              |
