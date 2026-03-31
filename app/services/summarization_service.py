@@ -18,9 +18,10 @@ Why Map-Reduce?
 
 Supported models (set via SUMMARIZATION_MODEL env var):
   - "distilbart"  → sshleifer/distilbart-cnn-6-6  (~300 MB, fast)
+  - "bart-large"  → facebook/bart-large-cnn (~1.6 GB, better quality)
   - "flan-t5"     → google/flan-t5-base            (~900 MB, instruction-tuned)
 
-Default: "distilbart"
+Default: "bart-large"
 """
 
 import os
