@@ -15,10 +15,20 @@ RUN python -m spacy download en_core_web_sm
 
 # Pre-download the default summarization model so the first request is fast.
 # This caches the model weights inside the Docker image at build time.
-# Change the model name here (and the SUMMARIZATION_MODEL env var) to switch models.
+# --- distilbart (~300MB, fast, but very extractive) ---
+# RUN python -c "from transformers import AutoTokenizer, AutoModelForSeq2SeqLM; \
+#     AutoTokenizer.from_pretrained('sshleifer/distilbart-cnn-6-6'); \
+#     AutoModelForSeq2SeqLM.from_pretrained('sshleifer/distilbart-cnn-6-6')"
+
+# --- bart-large (~1.6GB, much better abstraction quality) ---
 RUN python -c "from transformers import AutoTokenizer, AutoModelForSeq2SeqLM; \
-    AutoTokenizer.from_pretrained('sshleifer/distilbart-cnn-6-6'); \
-    AutoModelForSeq2SeqLM.from_pretrained('sshleifer/distilbart-cnn-6-6')"
+    AutoTokenizer.from_pretrained('facebook/bart-large-cnn'); \
+    AutoModelForSeq2SeqLM.from_pretrained('facebook/bart-large-cnn')"
+
+# --- flan-t5 (~900MB, instruction-tuned, needs prompt prefix) ---
+# RUN python -c "from transformers import AutoTokenizer, AutoModelForSeq2SeqLM; \
+#     AutoTokenizer.from_pretrained('google/flan-t5-base'); \
+#     AutoModelForSeq2SeqLM.from_pretrained('google/flan-t5-base')"
 
 # Copy application source
 COPY app/ ./app/

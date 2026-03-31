@@ -8,6 +8,8 @@ services:
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
-      # Which summarization model to use: "distilbart" or "flan-t5"
-      # To use flan-t5, also pre-download it in the Dockerfile.
-      - SUMMARIZATION_MODEL=distilbart
+      # Which summarization model to use: "distilbart", "bart-large", or "flan-t5"
+      # Make sure to also pre-download the chosen model in the Dockerfile.
+      # - SUMMARIZATION_MODEL=distilbart
+      - SUMMARIZATION_MODEL=bart-large
+      # - SUMMARIZATION_MODEL=flan-t5
